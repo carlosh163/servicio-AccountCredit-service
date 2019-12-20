@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.springboot.appbanco.model.BankAccount;
+import com.springboot.appbanco.model.CreditAccount;
 import com.springboot.appbanco.model.Client;
 import com.springboot.appbanco.service.IAccountService;
 
@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
 
 @RefreshScope
 @RestController
-@RequestMapping("api/account")
+@RequestMapping("api/creditAccount")
 public class AccountController {
 	
 	
@@ -61,41 +61,24 @@ public class AccountController {
 	
 	
 	@GetMapping
-	public Flux<BankAccount> findAll(){
+	public Flux<CreditAccount> findAll(){
 		return service.findAll();
 	}
 	
 	@GetMapping("/{id}")
-	public Mono<BankAccount> findById(@PathVariable String id){
+	public Mono<CreditAccount> findById(@PathVariable String id){
 		
-		//Mono<Account> accountE = service.findById(id);
-		//accountE.empty()
-		
-		//return service.findById(id);
-		//System.out.println("resp"+accountE);
-		
-		/*return accountE.flatMap(account ->{
-			if(account == null) {
-				return Mono.error(new ModeloNotFoundException("ID NO ENCONTRADO"+ id));
-			}
-		}).switchIfEmpty(Mono.just(accountE));
-		
-		if(accountE == null) {
-			throw new ModeloNotFoundException("ID NO ENCONTRADO"+ id);
-		}*/
-		
-		//return accountE;
 		return service.findById(id);
 	}
-	
-	@PostMapping
-	public Mono<BankAccount> create(@RequestBody BankAccount account){
+	//Apertura
+	@PostMapping("/CreateAccountCreditNew")
+	public Mono<CreditAccount> create(@RequestBody CreditAccount account){
 		return service.create(account);
 	}
 	
 	
 	@PutMapping("/{id}")
-	public Mono<BankAccount> update(@RequestBody BankAccount perso, @PathVariable String id){
+	public Mono<CreditAccount> update(@RequestBody CreditAccount perso, @PathVariable String id){
 		return service.update(perso, id);
 	}
 	
@@ -118,34 +101,47 @@ public class AccountController {
 	
 	//
 	
-	@GetMapping("/ListarClientesXNroDocuLocal/{nroDoc}")
-	public Flux<BankAccount> findClientNrDocuL(@PathVariable String nroDoc){
+	/*@GetMapping("/ListarClientesXNroDocuLocal/{nroDoc}")
+	public Flux<CreditAccount> findClientNrDocuL(@PathVariable String nroDoc){
 		return service.findClienteByNroDocAccount(nroDoc);
-	}
+	}*/
 	
 	
 	//Consumo Trans:
-	
-	@PutMapping("/updateBalanceAccountByAccountNumber/{accountNumber}/{quantity}")
-	public Mono<BankAccount> updateBalanceAccountByAccountNumber(@PathVariable Integer accountNumber,@PathVariable double quantity){
+	//+cantidad a consumption -balance
+	@PutMapping("/updateBalanceAccountByAccountNumberConsumer/{accountNumber}/{quantity}")
+	public Mono<CreditAccount> updateBalanceAccountByAccountNumberConsumer(@PathVariable Integer accountNumber,@PathVariable double quantity){
 		
 		return service.findAccountByNroAccount(accountNumber).flatMap(account ->{
-			account.setBalance(account.getBalance()+quantity);
-			return service.save(account);
+			
+			if(quantity>account.getBalance()) {
+				System.out.println("No se puede consumir más de su Saldo Actual."+account.getBalance());
+				return Mono.empty();
+			}else {
+				account.setBalance(account.getBalance()-quantity);
+				account.setConsumption(account.getConsumption() + quantity);
+				return service.save(account);
+			}
+			
+			
+			
 		});
 		
 	}
-	
-	@PutMapping("/updateBalanceAccountRetireByAccountNumber/{accountNumber}/{quantity}")
-	public Mono<BankAccount> updateBalanceAccountRetireByAccountNumber(@PathVariable Integer accountNumber,@PathVariable double quantity){
+	//-cantidad a consumption +balance
+	@PutMapping("/updateBalanceAccounByAccountNumberPayment/{accountNumber}/{quantity}")
+	public Mono<CreditAccount> updateBalanceAccounByAccountNumberPayment(@PathVariable Integer accountNumber,@PathVariable double quantity){
 		
 		return service.findAccountByNroAccount(accountNumber).flatMap(account ->{
-			if(account.getBalance()-quantity>=0) {
-				account.setBalance(account.getBalance()-quantity);
-				return service.save(account);
-			}else {
-				System.out.println("Error saldo insuficiente..");
+			
+			
+			if(quantity>account.getConsumption()) {
+				System.out.println("No se puede pagar más de su Consumo Actual (Deuda)."+account.getConsumption());
 				return Mono.empty();
+			}else {
+				account.setBalance(account.getBalance()+quantity);
+				account.setConsumption(account.getConsumption() - quantity);
+				return service.save(account);
 			}
 			
 		});

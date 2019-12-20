@@ -11,9 +11,10 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.springboot.appbanco.model.BankAccount;
+import com.springboot.appbanco.model.CreditAccount;
 import com.springboot.appbanco.model.Client;
 import com.springboot.appbanco.repo.IAccountRepo;
 
@@ -28,206 +29,64 @@ public class AccountServiceImpl implements IAccountService {
 	@Autowired
 	@Qualifier("client")
 	private WebClient wCClient;
-	
-	
-	
-	
-	@Autowired
-	@Qualifier("personAutho")
-	private WebClient wCPersoAutho;
 
 	@Autowired
 	IAccountRepo repo;
 
 	@Override
-	public Flux<BankAccount> findAll() {
+	public Flux<CreditAccount> findAll() {
 		return repo.findAll();
 	}
 
 	@Override
-	public Mono<BankAccount> findById(String id) {
+	public Mono<CreditAccount> findById(String id) {
 		return repo.findById(id);
 	}
 
 	// REQ03 : Validacion de Cuenta Unica- Ahorro.,
 	@Override
-	public Mono<BankAccount> create(BankAccount account) {
-		System.out.println("CUENTAAA");
+	public Mono<CreditAccount> create(CreditAccount account) {
+		System.out.println("CUENTAAA CREDITO");
 
-		// Aperturar una Cuenta Ahorro.. MSAhorro. DATOS cuenta (nroCuenta,SALDO,fechaApert..) List<Client> objClient.
-		// OBJETIVO: Identificar si los DNI de los Clientes son nuevos....
-		List<Client> listaCLientesNuevos = account.getCustomerList();
-		
-		//Validando segun el Tipo de Cliente: (Personal)
-		
-		return Flux.fromIterable(listaCLientesNuevos).flatMap(client -> {
-		 //TypeClient::
-			
-			
-			
-			return Flux.just(client);
-		})
-		.next()
-		.flatMap(objClient ->{
-			
-		
-			System.out.println("Ingreso a ver 1 Cliente,tipo");
+		Client clie = account.getCustomer();
+
+		return Mono.just(clie).flatMap(objClient -> {
+
 			String typeC = objClient.getClientType();
 			String typeAccountl = account.getAccountType();
-			if(typeC.equals("Personal")) {
-				System.out.println("El tipo es Personal");
-				//Solo 1 debe tener de cada tipo:: (3 CB)
-				
-				
-				Mono<Boolean> vB = FluxValidarDNIExistentes(typeAccountl,listaCLientesNuevos).reduce(true, (a, b) -> a & b);
-				// Falso...
-				
-				return vB.flatMap(b -> {
-					if (b) {
-						// System.out.println("Ya puede registrar");
 
-						Date date = new Date();
-						account.setOpeningDate(date);
-						
-						
-						
-						/* Registrando en MS CLiente.... Datos de la cuenta, Lista de Clientes (FILAS)*/
-						return Flux.just(account).flatMap( objC ->{
-								//Flux:
-							wCClient.post().accept(APPLICATION_JSON_UTF8).contentType(APPLICATION_JSON_UTF8)
-							.syncBody(objC).retrieve().bodyToFlux(BankAccount.class).subscribe();
-							return wCPersoAutho.post().accept(APPLICATION_JSON_UTF8).contentType(APPLICATION_JSON_UTF8)
-									.syncBody(objC).retrieve().bodyToFlux(BankAccount.class);
-						}).next() //Convierte de Flux a Mono.
-								.flatMap(client ->{
-									return repo.save(account);
-								});
-					} else {
-						
-						//return new ResponseEntity<Page<Genero>>(pacientes, HttpStatus.OK);
-						System.out.println("Ya existe");
-						 return Mono.empty();
-						
-						//throw new ModeloNotFoundException("Ya existe almenos 1 Cliente que desea registrar");
-					}
-
-				});
-
-				
-				
-				
-				
-			}else if(typeC.equals("Empresarial")){
-				System.out.println("El tipo es Empresarial");
-				
-				if(typeAccountl.equals("Ahorro")) {
-					System.out.println("No puede tener una cuenta.");
-				}else if(typeAccountl.equals("Plazo")) {
-					System.out.println("No puede tener una cuenta");
-				}else {
-					/* Registrando en MS CLiente.... Datos de la cuenta, Lista de Clientes (FILAS)*/
-					return Flux.just(account).flatMap( objC ->{
-							//Flux:
-						wCClient.post().accept(APPLICATION_JSON_UTF8).contentType(APPLICATION_JSON_UTF8)
-						.syncBody(objC).retrieve().bodyToFlux(BankAccount.class).subscribe();
-						return wCPersoAutho.post().accept(APPLICATION_JSON_UTF8).contentType(APPLICATION_JSON_UTF8)
-								.syncBody(objC).retrieve().bodyToFlux(BankAccount.class);
-					}).next() //Convierte de Flux a Mono.
-							.flatMap(client ->{
-								return repo.save(account);
-							});
-				}
-			}
 			
-			return Mono.empty();
-			
-		});
-		
-		
-		
-		
-	}
+			/*
+			 * Registrando en MS CLiente.... Datos de la cuenta, Lista de Clientes (FILAS)
+			 */
+			return Flux.just(account).flatMap(objC -> {
+				// Flux:
+				objC.setOpeningDate(new Date());
+				objC.setConsumption(0);
 
-	private Flux<Boolean> FluxValidarDNIExistentes(String typeAccountAperture,List<Client> lstclient) {
-		// boolean estadoF= false;
-		
-		return repo.findByAccountType(typeAccountAperture).flatMap(cuentaxType ->{
-			
-			return Flux.fromIterable(cuentaxType.getCustomerList()).map(client -> {
-				boolean estado = true;
+				objC.setBalance(account.getCreditLimit());
 				
-				for(Client objCliexists: lstclient) {
-					if(objCliexists.getDocumentNumber().equals(client.getDocumentNumber())) {
-						estado = false;
-						break;
-					}else {
-						estado = true;
-					}
-				}
-				//return Flux.just(client);
-				return estado;
+				return wCClient.post().uri("/SaveAccountCredit")
+						.accept(APPLICATION_JSON_UTF8)
+						.contentType(APPLICATION_JSON_UTF8)
+						.syncBody(objC)
+						.retrieve().bodyToMono(CreditAccount.class);
 				
-			});
-
-				/*String DNI = client.getDocumentNumber();
-
-				Account objcuenta = new Account();
-				objcuenta.setAccountstatus('N');
+				/*.body(BodyInserters.fromObject(objC)).retrieve().bodyToMono(CreditAccount.class);*/
 				
-/*Flux.fromIterable(lstclient).flatMap(clientExist ->{
-	
-	
-	
-	
-});*/
-				/*return Flux.fromIterable(list).flatMap(client -> {
+				
+				
 
-					String DNI = client.getDocumentNumber();
-
-					Account objcuenta = new Account();
-					objcuenta.setAccountstatus('N');
-
-					return repo.findByAccountXDocument(DNI).switchIfEmpty(Mono.just(objcuenta)).map(DatAccountsOp -> {
-						if (DatAccountsOp.getAccountstatus() == 'N') {
-							// System.out.println("Ya puede registrar");
-							return true;
-
-						} else {
-							// System.out.println("Ya existe");
-							return false;
-						}
-
-						// return estadoF;
+			}).next()
+					.flatMap(client -> {
+						return repo.save(account);
 					});
-
-				});
-
-
-				
-						return repo.findByAccountXDocument(DNI).switchIfEmpty(Mono.just(objcuenta)).map(DatAccountsOp -> {
-					if (DatAccountsOp.getAccountstatus() == 'N') {
-						 System.out.println("Ya puede registrar");
-						return true;
-
-					} else {
-						// System.out.println("Ya existe");
-						return false;
-					}
-
-					// return estadoF;
-				});
-
-			});*/
-			
 		});
-		
-
-		
 
 	}
 
 	@Override
-	public Mono<BankAccount> update(BankAccount account, String id) {
+	public Mono<CreditAccount> update(CreditAccount account, String id) {
 		// TODO Auto-generated method stub
 		/*
 		 * return repo.findById(id).flatMap(Account ->{
@@ -273,7 +132,8 @@ public class AccountServiceImpl implements IAccountService {
 
 		return wCClient.post().accept(APPLICATION_JSON_UTF8).contentType(APPLICATION_JSON_UTF8)
 				// .body(fromObject(cliente)) - -BodyInserters
-				.syncBody(cliente).retrieve().bodyToMono(Client.class);
+				.body(BodyInserters.fromObject(cliente)).retrieve().bodyToMono(Client.class);
+				//.syncBody(cliente).retrieve().bodyToMono(Client.class);
 	}
 
 	@Override
@@ -304,21 +164,21 @@ public class AccountServiceImpl implements IAccountService {
 				.accept(APPLICATION_JSON_UTF8).exchange().flatMap(response -> response.bodyToMono(Client.class));
 	}
 
-	@Override
-	public Flux<BankAccount> findClienteByNroDocAccount(String nroDoc) {
+	/*@Override
+	public Flux<CreditAccount> findClienteByNroDocAccount(String nroDoc) {
 
 		return repo.findByAccountXDocument(nroDoc);
-	}
+	}*/
 
 	@Override
-	public Mono<BankAccount> findAccountByNroAccount(Integer accNumber) {
-		
+	public Mono<CreditAccount> findAccountByNroAccount(Integer accNumber) {
+
 		return repo.findByAccountNumber(accNumber);
 	}
 
 	@Override
-	public Mono<BankAccount> save(BankAccount account) {
-		
+	public Mono<CreditAccount> save(CreditAccount account) {
+
 		return repo.save(account);
 	}
 

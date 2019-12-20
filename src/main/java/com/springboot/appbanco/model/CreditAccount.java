@@ -14,20 +14,18 @@ import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 
 import lombok.Data;
 
-//Ahorro.
-@Document(collection = "account")
+@Document(collection = "creditAccount")
 @Data
-public class BankAccount {
+public class CreditAccount {
 
 	@Id
 	private String codAccount;
 
 	private String productType; // Cuenta Bancarias o Producto Credito.
 
-	private String accountType; // C.B = Ahorro, CU.Corriente, CU.PlazoFijo. -- CRED = Personal, Empresarial,
-								// Tarjeta Credito, Adelanto Efectivo
+	private String accountType; // CRED = Personal, Empresarial, Tarjeta Credito, Adelanto Efectivo
 
-	// @Size(min = 3,message ="Tipo de Producto debe tener minimo 3 caracteres")
+	
 	private Integer accountNumber;
 
 	// @JsonSerialize(using = ToStringSerializer.class)
@@ -37,8 +35,14 @@ public class BankAccount {
 
 	private double balance; // saldo
 
-	private List<Client> customerList; // Todos los Clientes que poseen una cuenta (Titulares)
-	private List<PersonAuthorized> personAuthorizedList; // Personas Autorizadas
+	private Client customer;
+	
+	
+	//Datos segun Credito:
+	
+	private double consumption; // consumo
+	private double creditLimit;
+	
 
 	private char accountstatus; // Activo o Inactivo.
 
@@ -74,21 +78,7 @@ public class BankAccount {
 		this.balance = balance;
 	}
 
-	public List<Client> getCustomerList() {
-		return customerList;
-	}
-
-	public void setCustomerList(List<Client> customerList) {
-		this.customerList = customerList;
-	}
-
-	public List<PersonAuthorized> getPersonAuthorizedList() {
-		return personAuthorizedList;
-	}
-
-	public void setPersonAuthorizedList(List<PersonAuthorized> personAuthorizedList) {
-		this.personAuthorizedList = personAuthorizedList;
-	}
+	
 
 	public char getAccountstatus() {
 		return accountstatus;
@@ -114,7 +104,30 @@ public class BankAccount {
 		this.productType = productType;
 	}
 
-	
+	public Client getCustomer() {
+		return customer;
+	}
+
+	public void setCustomer(Client customer) {
+		this.customer = customer;
+	}
+
+	public double getConsumption() {
+		return consumption;
+	}
+
+	public void setConsumption(double consumption) {
+		this.consumption = consumption;
+	}
+
+	public double getCreditLimit() {
+		return creditLimit;
+	}
+
+	public void setCreditLimit(double creditLimit) {
+		this.creditLimit = creditLimit;
+	}
+
 	
 	
 	

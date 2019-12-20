@@ -10,12 +10,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 public class AppConfig {
 	
-	@Value("${config.base.endpoint}")
+	@Value("${config.base.endpoint.client}")
 	private String url;
 	
 	
-	@Value("${config.base.endpoint.persoau}")
-	private String urlPersoAutho;
 
 	@Bean
 	@Qualifier("client")
@@ -24,12 +22,5 @@ public class AppConfig {
 		return WebClient.create(url); //EndPoint para conectarse con ese MS.
 	}
 	
-	
-	@Bean
-	@Qualifier("personAutho")
-	public WebClient registrarWebClientPA() {
-
-		return WebClient.create(urlPersoAutho); //EndPoint para conectarse con ese MS.
-	}
 	
 }

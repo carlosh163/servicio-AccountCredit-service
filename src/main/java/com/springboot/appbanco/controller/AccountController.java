@@ -60,12 +60,12 @@ public class AccountController {
 	}
 	
 	
-	@GetMapping
+	@GetMapping("/SearchAll")
 	public Flux<CreditAccount> findAll(){
 		return service.findAll();
 	}
 	
-	@GetMapping("/{id}")
+	@GetMapping("/SearchById/{id}")
 	public Mono<CreditAccount> findById(@PathVariable String id){
 		
 		return service.findById(id);
@@ -77,12 +77,12 @@ public class AccountController {
 	}
 	
 	
-	@PutMapping("/{id}")
+	@PutMapping("/Edit/{id}")
 	public Mono<CreditAccount> update(@RequestBody CreditAccount perso, @PathVariable String id){
 		return service.update(perso, id);
 	}
 	
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/Remove/{id}")
 	public Mono<Void> delete(@PathVariable String id){
 		return service.delete(id);
 	}

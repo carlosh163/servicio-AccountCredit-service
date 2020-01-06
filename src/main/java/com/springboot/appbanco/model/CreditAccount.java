@@ -43,6 +43,8 @@ public class CreditAccount {
 	private double consumption; // consumo
 	private double creditLimit;
 	
+	
+	private String bankName;
 
 	private char accountstatus; // Activo o Inactivo.
 
@@ -126,6 +128,14 @@ public class CreditAccount {
 
 	public void setCreditLimit(double creditLimit) {
 		this.creditLimit = creditLimit;
+	}
+
+	public String getBankName() {
+		return bankName;
+	}
+
+	public void setBankName(String bankName) {
+		this.bankName = bankName;
 	}
 
 	

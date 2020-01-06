@@ -13,7 +13,8 @@ public class AppConfig {
 	@Value("${config.base.endpoint.client}")
 	private String url;
 	
-	
+	@Value("${config.base.endpoint.accountdue}")
+	private String urlAccountDue;
 
 	@Bean
 	@Qualifier("client")
@@ -22,5 +23,11 @@ public class AppConfig {
 		return WebClient.create(url); //EndPoint para conectarse con ese MS.
 	}
 	
+	@Bean
+	@Qualifier("accountDue")
+	public WebClient registrarWebClientAD() {
+
+		return WebClient.create(urlAccountDue); //EndPoint para conectarse con ese MS.
+	}
 	
 }
